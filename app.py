@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 import os
 import openai
 import json
@@ -216,6 +216,10 @@ Candidate's Question:
 @app.route("/coach-demo")
 def coach_demo():
     return render_template("coach_demo.html")
+
+@app.route("/")  # Root route to make Railway app URL work
+def index():
+    return redirect("/coach-demo")
 
 def save_sisuu_profile(profile_data):
     supabase.table("sisuu_profiles").insert(profile_data).execute()
