@@ -120,7 +120,7 @@
       typing.style.display = "block";
 
       try {
-        const response = await fetch("/demo-coach", {
+        const response = await fetch("/coach", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question: userText })
