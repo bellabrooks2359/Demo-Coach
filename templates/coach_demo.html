@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sisuu Reflection Coach</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Work Sans', sans-serif;
+      background-color: #FFFDF7;
+      color: #000;
+    }
+    #chatSection {
+      background: #fff;
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: auto;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #00E6B2;
+      color: #23170B;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #00B895;
+    }
+    .chat {
+      margin-top: 20px;
+    }
+    .chat::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    .message {
+      max-width: 75%;
+      padding: 12px 16px;
+      margin: 10px 0;
+      border-radius: 16px;
+      line-height: 1.5;
+      display: inline-block;
+      font-size: 15px;
+    }
+    .user {
+      background-color: #00E6B2;
+      color: #23170B;
+      float: right;
+      border-bottom-right-radius: 0;
+    }
+    .sisuu {
+      background-color: #F3F3F3;
+      color: #000;
+      float: left;
+      border-bottom-left-radius: 0;
+    }
+    .typing {
+      font-style: italic;
+      color: #888;
+      margin-top: 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      #chatSection {
+        padding: 20px 15px;
+      }
+      .message {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <section id="chatSection">
+    <div id="scrollTarget">
+      <div class="chat" id="chatBox">
+        <div class="message sisuu">
+          Hi! Before we get started, is there anything I need to know in order to support you best in this conversation?
+        </div>
+      </div>
+      <div class="typing" id="typingIndicator" style="display:none;">Sisuu is thinking...</div>
+      <input type="text" id="userInput" placeholder="Type here…" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </section>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const chatBox = document.getElementById("chatBox");
+      const typing = document.getElementById("typingIndicator");
+      const userText = input.value;
+
+      if (!userText) return;
+
+      chatBox.innerHTML += `<div class="message user">${userText}</div>`;
+      input.value = "";
+      typing.style.display = "block";
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userText })
+        });
+        const data = await response.json();
+        typing.style.display = "none";
+
+        if (data.response) {
+          chatBox.innerHTML += `<div class="message sisuu">${data.response}</div>`;
+        } else {
+          chatBox.innerHTML += `<div class="message sisuu">Something went wrong. Try again.</div>`;
+        }
+      } catch (err) {
+        typing.style.display = "none";
+        chatBox.innerHTML += `<div class="message sisuu">I couldn't connect — try again shortly.</div>`;
+      }
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>
