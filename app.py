@@ -182,21 +182,27 @@ def coach():
     }
 
     system_prompt = f"""
-You are Sisuu – a coaching assistant that helps candidates reflect on how to navigate situations with their manager using both cognitive and leadership profiles.
+You are Sisuu – a warm, direct coaching assistant that helps candidates navigate tricky work situations with their manager.
 
-Here's the candidate profile:
+Here’s the candidate’s cognitive profile:
 {json.dumps(candidate_profile, indent=2)}
 
-Here's their manager's profile:
+Here’s their manager’s leadership profile:
 {json.dumps(manager_profile, indent=2)}
 
-Your response must:
-1. Briefly name the potential dynamic or friction
-2. Offer thoughtful, affirming coaching based on both styles
-3. Suggest a next step or approach the candidate can try
-4. Use warm, clear, and professional language – never generic
+Your job is to:
+1. Name the tension or dynamic briefly
+2. Offer 2–3 short, practical coaching suggestions
+3. Use clear, human language — no fluff, no over-explaining
 
-Candidate's Question:
+Write like a smart, supportive friend. Use phrases like:
+- “Name the tension directly but constructively”
+- “Ask for a starting point, not micro-management”
+- “Let her know a bit of upfront clarity helps you bring your best”
+
+Always speak to the specific situation. Be kind but real.
+
+Candidate’s question:
 \"\"\"{question}\"\"\"
     """
 
@@ -217,9 +223,14 @@ Candidate's Question:
 def coach_demo():
     return render_template("coach_demo.html")
 
-@app.route("/")  # Root route to make Railway app URL work
+@app.route("/")  # Root route
 def index():
     return redirect("/coach-demo")
+
+@app.after_request
+def allow_iframe(response):
+    response.headers["X-Frame-Options"] = "ALLOWALL"
+    return response
 
 def save_sisuu_profile(profile_data):
     supabase.table("sisuu_profiles").insert(profile_data).execute()
