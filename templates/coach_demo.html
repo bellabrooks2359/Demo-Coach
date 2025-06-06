@@ -2,57 +2,145 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sisuu Coaching Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sisuu Reflection Coach</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; padding: 2em; background: #f7f7f7; }
-    #chat { max-width: 600px; margin: auto; background: white; padding: 1em; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    .message { margin: 1em 0; }
-    .bot { background: #eee; padding: 0.75em; border-radius: 10px; }
-    .user { background: #00f2b3; padding: 0.75em; color: black; border-radius: 10px; text-align: right; }
-    input, button { width: 100%; padding: 0.75em; margin-top: 1em; border-radius: 8px; border: 1px solid #ccc; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Work Sans', sans-serif;
+      background-color: #FFFDF7;
+      color: #000;
+    }
+    #chatSection {
+      background: #fff;
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: auto;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #00E6B2;
+      color: #23170B;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #00B895;
+    }
+    .chat {
+      margin-top: 20px;
+    }
+    .chat::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    .message {
+      max-width: 75%;
+      padding: 12px 16px;
+      margin: 10px 0;
+      border-radius: 16px;
+      line-height: 1.5;
+      display: inline-block;
+      font-size: 15px;
+    }
+    .user {
+      background-color: #00E6B2;
+      color: #23170B;
+      float: right;
+      border-bottom-right-radius: 0;
+    }
+    .sisuu {
+      background-color: #F3F3F3;
+      color: #000;
+      float: left;
+      border-bottom-left-radius: 0;
+    }
+    .typing {
+      font-style: italic;
+      color: #888;
+      margin-top: 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      #chatSection {
+        padding: 20px 15px;
+      }
+      .message {
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="chat">
-    <div class="message bot">Hi! Before we get started, is there anything I need to know in order to support you best in this conversation?</div>
-    <div id="messages"></div>
-    <input id="input" placeholder="Type here..." />
-    <button onclick="send()">Send</button>
-  </div>
+
+  <section id="chatSection">
+    <div id="scrollTarget">
+      <div class="chat" id="chatBox">
+        <div class="message sisuu">
+          Hi! Before we get started, is there anything I need to know in order to support you best in this conversation?
+        </div>
+      </div>
+      <div class="typing" id="typingIndicator" style="display:none;">Sisuu is thinking...</div>
+      <input type="text" id="userInput" placeholder="Type here…" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </section>
 
   <script>
-    async function send() {
-      const input = document.getElementById("input");
-      const messages = document.getElementById("messages");
-      const text = input.value.trim();
-      if (!text) return;
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const chatBox = document.getElementById("chatBox");
+      const typing = document.getElementById("typingIndicator");
+      const userText = input.value;
 
-      const userDiv = document.createElement("div");
-      userDiv.className = "message user";
-      userDiv.innerText = text;
-      messages.appendChild(userDiv);
+      if (!userText) return;
 
+      chatBox.innerHTML += `<div class="message user">${userText}</div>`;
       input.value = "";
+      typing.style.display = "block";
 
       try {
-        const res = await fetch("/coach", {
+        const response = await fetch("/demo-coach", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: text })
+          body: JSON.stringify({ question: userText })
         });
-        const data = await res.json();
+        const data = await response.json();
+        typing.style.display = "none";
 
-        const botDiv = document.createElement("div");
-        botDiv.className = "message bot";
-        botDiv.innerText = data.response || "Something went wrong.";
-        messages.appendChild(botDiv);
+        if (data.response) {
+          chatBox.innerHTML += `<div class="message sisuu">${data.response}</div>`;
+        } else {
+          chatBox.innerHTML += `<div class="message sisuu">Something went wrong. Try again.</div>`;
+        }
       } catch (err) {
-        const botDiv = document.createElement("div");
-        botDiv.className = "message bot";
-        botDiv.innerText = "Something went wrong. Try again.";
-        messages.appendChild(botDiv);
+        typing.style.display = "none";
+        chatBox.innerHTML += `<div class="message sisuu">I couldn't connect — try again shortly.</div>`;
       }
+
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
   </script>
+
 </body>
 </html>
