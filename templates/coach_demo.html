@@ -1,105 +1,146 @@
-from flask import Flask, request, jsonify, render_template, redirect
-import os
-import openai
-import json
-from supabase import create_client
-
-app = Flask(__name__)
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-@app.route("/coach", methods=["POST"])
-def coach():
-    data = request.json
-    question = data.get("question", "")
-
-    candidate_profile = {
-        "Name": "Mohsin",
-        "Summary": "Pattern-spotter and structured problem-solver who reimagines systems to unlock human potential.",
-        "Cognitive Style": [
-            "Generalist with cross-domain thinking",
-            "Balances detail orientation with big-picture strategy",
-            "Thrives on autonomy, challenge, and ambiguity"
-        ],
-        "Strengths": [
-            "Pattern recognition in people",
-            "Fast autonomous learner",
-            "Creative strategist",
-            "Resilient and non-conventional"
-        ],
-        "Motivators": [
-            "Freedom through impact",
-            "Long-term legacy",
-            "Integrity without ego"
-        ]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sisuu Reflection Coach</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Work Sans', sans-serif;
+      background-color: #FFFDF7;
+      color: #000;
+    }
+    #chatSection {
+      background: #fff;
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: auto;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #00E6B2;
+      color: #23170B;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #00B895;
+    }
+    .chat {
+      margin-top: 20px;
+    }
+    .chat::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    .message {
+      max-width: 75%;
+      padding: 12px 16px;
+      margin: 10px 0;
+      border-radius: 16px;
+      line-height: 1.5;
+      display: inline-block;
+      font-size: 15px;
+    }
+    .user {
+      background-color: #00E6B2;
+      color: #23170B;
+      float: right;
+      border-bottom-right-radius: 0;
+    }
+    .sisuu {
+      background-color: #F3F3F3;
+      color: #000;
+      float: left;
+      border-bottom-left-radius: 0;
+    }
+    .typing {
+      font-style: italic;
+      color: #888;
+      margin-top: 10px;
+      text-align: left;
+      font-size: 14px;
     }
 
-    manager_profile = {
-        "Name": "Sarah Johnson",
-        "Summary": "Engineering leader who blends technical strategy with human-centred team development.",
-        "Leadership Style": [
-            "Balances technical depth with strategic thinking",
-            "Prioritises psychological safety and team development",
-            "Focuses on building culture and trust as a foundation for process"
-        ],
-        "Strengths": [
-            "Technical leadership with human focus",
-            "Strategic communication across levels",
-            "Systems thinking for team dynamics"
-        ],
-        "Values": [
-            "Psychological safety first",
-            "Sustainable excellence (avoids burnout culture)"
-        ]
+    @media (max-width: 600px) {
+      #chatSection {
+        padding: 20px 15px;
+      }
+      .message {
+        font-size: 14px;
+      }
     }
+  </style>
+</head>
+<body>
 
-    system_prompt = f"""
-You are Sisuu — a coaching assistant that gives clear, grounded, and useful advice based on context.
+  <section id="chatSection">
+    <div id="scrollTarget">
+      <div class="chat" id="chatBox">
+        <div class="message sisuu">
+          Hi! Before we get started, is there anything I need to know in order to support you best in this conversation?
+        </div>
+      </div>
+      <div class="typing" id="typingIndicator" style="display:none;">Sisuu is thinking...</div>
+      <input type="text" id="userInput" placeholder="Type here…" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </section>
 
-Here’s the candidate’s cognitive profile:
-{json.dumps(candidate_profile, indent=2)}
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const chatBox = document.getElementById("chatBox");
+      const typing = document.getElementById("typingIndicator");
+      const userText = input.value;
 
-Here’s the manager’s leadership profile:
-{json.dumps(manager_profile, indent=2)}
+      if (!userText) return;
 
-Your job is to:
-- Identify the dynamic or mismatch based on how both people operate
-- Give the candidate 2–3 sharp suggestions to help them move forward
-- Be practical and to the point — no fluff, no long-winded reflection
-- Include concrete phrases or tactics the candidate could use
-- Always factor in their style, strengths, and how they work best
+      chatBox.innerHTML += `<div class="message user">${userText}</div>`;
+      input.value = "";
+      typing.style.display = "block";
 
-Avoid corporate or overly formal tone. No life coaching. Be helpful, clear, and grounded.
+      try {
+        const response = await fetch("/coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: userText })
+        });
+        const data = await response.json();
+        typing.style.display = "none";
 
-Candidate’s question:
-\"\"\"{question}\"\"\"
-"""
+        if (data.response) {
+          chatBox.innerHTML += `<div class="message sisuu">${data.response}</div>`;
+        } else {
+          chatBox.innerHTML += `<div class="message sisuu">Something went wrong. Try again.</div>`;
+        }
+      } catch (err) {
+        typing.style.display = "none";
+        chatBox.innerHTML += `<div class="message sisuu">I couldn't connect — try again shortly.</div>`;
+      }
 
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": question}
-            ]
-        )
-        answer = response.choices[0].message["content"]
-        return jsonify({"response": answer})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
 
-@app.route("/coach-demo")
-def coach_demo():
-    return render_template("coach_demo.html")
-
-@app.route("/")  # Root route
-def index():
-    return redirect("/coach-demo")
-
-@app.after_request
-def allow_iframe(response):
-    response.headers["X-Frame-Options"] = "ALLOWALL"
-    return response
+</body>
+</html>
