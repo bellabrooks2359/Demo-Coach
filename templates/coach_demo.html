@@ -120,10 +120,10 @@
       typing.style.display = "block";
 
       try {
-        const response = await fetch("/chat", {
+        const response = await fetch("/coach", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userText })
+          body: JSON.stringify({ question: userText })
         });
         const data = await response.json();
         typing.style.display = "none";
